@@ -45,6 +45,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 	public void terminate() {
 		jmdns.unregisterAllServices();
 		jmdns.removeServiceListener(MDNSDiscovery.freenetServiceType, serviceListener);
+		jmdns.close();
 		goon = false;
 		synchronized (this) {
 			notify();
