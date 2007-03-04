@@ -37,12 +37,14 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 	private ServiceInfo fproxyInfo, tcmiInfo, fcpInfo, nodeInfo;
 	private Config nodeConfig;
 	private PageMaker pageMaker;
+	private ServiceListener serviceListener;
 	
 	/**
 	 * Called upon plugin unloading : we unregister advertised services
 	 */
 	public void terminate() {
 		jmdns.unregisterAllServices();
+		jmdns.removeServiceListener(MDNSDiscovery.freenetServiceType, serviceListener);
 		goon = false;
 		synchronized (this) {
 			notify();
@@ -92,8 +94,10 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			jmdns.registerService(nodeInfo);
 			
 			// Watch out for other nodes
-			jmdns.addServiceListener(MDNSDiscovery.freenetServiceType, new NodeMDNSListener(this));
 			
+			serviceListener = new NodeMDNSListener(this);
+			jmdns.addServiceListener(MDNSDiscovery.freenetServiceType, serviceListener);
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
