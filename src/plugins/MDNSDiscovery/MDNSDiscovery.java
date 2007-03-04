@@ -37,32 +37,23 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 	private ServiceInfo fproxyInfo, tcmiInfo, fcpInfo, nodeInfo;
 	private Config nodeConfig;
 	private PageMaker pageMaker;
-	private ServiceListener serviceListener;
 	
 	/**
 	 * Called upon plugin unloading : we unregister advertised services
 	 */
-	public void terminate() {
-		//try {
-		//	jmdns.unregisterAllServices();
-		//} catch (Throwable e) {
-		//	e.printStackTrace();
-		//}
-		//jmdns.removeServiceListener(MDNSDiscovery.freenetServiceType, serviceListener);
+	public synchronized void terminate() {
 		jmdns.close();
 		goon = false;
-		synchronized (this) {
-			notify();
-		}
+		notify();
 	}
 
 	public void runPlugin(PluginRespirator pr) {
 		// wait until the node is initialised.
-		do{
+		while(pr.getNode() == null || !pr.getNode().isHasStarted()){
 			try{
 				Thread.sleep(1000);	
 			}catch (InterruptedException e) {}			
-		}while(pr.getNode() == null || !pr.getNode().isHasStarted());
+		}
 			
 		nodeConfig = pr.getNode().config;
 		pageMaker = new PageMaker("clean");
@@ -71,17 +62,12 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			// Create the multicast listener
 			jmdns = new JmDNS();
 			String truncatedNodeName = pr.getNode().getMyName();
-			if(truncatedNodeName.length() > 63) {
+			if(truncatedNodeName.length() > 62) 
 				truncatedNodeName = truncatedNodeName.substring(0, 62);
-			}
-			String truncatedHostName = pr.getNode().getMyName();
-			if(truncatedHostName.length() > 63) {
-				truncatedHostName = truncatedHostName.substring(0, 62);
-			}
-			if(truncatedHostName.endsWith(".")) {
-				truncatedHostName = truncatedHostName.substring(0, truncatedHostName.length() - 2);
-			}
-			final String address = "server."+truncatedNodeName+"."+truncatedHostName;
+			final String address = "server.-=" + truncatedNodeName + "=-";
+			
+			// Watch out for other nodes
+			jmdns.addServiceListener(MDNSDiscovery.freenetServiceType, new NodeMDNSListener(this));
 			
 			// Advertise Fproxy
 			if(nodeConfig.get("fproxy").getBoolean("enabled")){
@@ -108,11 +94,6 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			nodeInfo = new ServiceInfo(MDNSDiscovery.freenetServiceType, "Freenet 0.7 Node " + address,
 					nodeConfig.get("node").getInt("listenPort"), 0, 0, "");
 			jmdns.registerService(nodeInfo);
-			
-			// Watch out for other nodes
-			
-			serviceListener = new NodeMDNSListener(this);
-			jmdns.addServiceListener(MDNSDiscovery.freenetServiceType, serviceListener);
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -121,34 +102,34 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 		while(goon){
 			synchronized (this) {
 				try{
-					wait(300000);
+					wait(5000);
 				}catch (InterruptedException e) {}	
 			}
 		}
 	}
 	
-	static class NodeMDNSListener implements ServiceListener {
+	private class NodeMDNSListener implements ServiceListener {
 		final MDNSDiscovery plugin;
 		
 		public NodeMDNSListener(MDNSDiscovery plugin) {
 			this.plugin = plugin;
 		}
 		
-        public synchronized void serviceAdded(ServiceEvent event) {
+        public void serviceAdded(ServiceEvent event) {
             System.out.println("Service added   : " + event.getName()+"."+event.getType());
             synchronized (plugin) {
                 plugin.notify();				
 			}
         }
         
-        public synchronized void serviceRemoved(ServiceEvent event) {
+        public void serviceRemoved(ServiceEvent event) {
             System.out.println("Service removed : " + event.getName()+"."+event.getType());
             synchronized (plugin) {
                 plugin.notify();				
 			}
         }
         
-        public synchronized void serviceResolved(ServiceEvent event) {
+        public void serviceResolved(ServiceEvent event) {
             System.out.println("Service resolved: " + event.getInfo());
             synchronized (plugin) {
                 plugin.notify();				
@@ -161,12 +142,13 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		
 		ServiceInfo[] foundNodes = jmdns.list(MDNSDiscovery.freenetServiceType);
+		
+		HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-"+ (foundNodes.length > 0 ? "normal" : "warning"));
+		HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
+		HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
+		
 		if(foundNodes != null && foundNodes.length > 0){
-			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
 			peerTableInfoboxHeader.addChild("#", "The following nodes have been found on the local subnet :");
-			HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
-			
 			HTMLNode peerTable = peerTableInfoboxContent.addChild("table", "class", "darknet_connections");
 			HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
 			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "The node's name.", "border-bottom: 1px dotted; cursor: help;" }, "Name");
@@ -174,38 +156,21 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "A description of the service.", "border-bottom: 1px dotted; cursor: help;" }, "Description");
 			
 			HTMLNode peerRow;
-			String mDNSServer;
-			String mDNSHost;
-			String mDNSPort;
-			String mDNSDescription;
+			String mDNSServer, mDNSHost, mDNSPort, mDNSDescription;
 			
 			for(int i=0; i<foundNodes.length; i++){
 			    peerRow = peerTable.addChild("tr");
 				mDNSServer = foundNodes[i].getServer();
-				if(mDNSServer == null) {
-					mDNSServer = "null";
-				}
-				peerRow.addChild("td", "class", "peer-name").addChild("#", mDNSServer);
 				mDNSHost = foundNodes[i].getHostAddress();
 				mDNSPort = Integer.toString(foundNodes[i].getPort());
-				if(mDNSHost == null) {
-					mDNSHost = "null";
-				}
-				if(mDNSPort == null) {
-					mDNSPort = "null";
-				}
-				peerRow.addChild("td", "class", "peer-address").addChild("#", mDNSHost+':'+mDNSPort);
 				mDNSDescription = foundNodes[i].getTextString();
-				if(mDNSDescription == null) {
-					mDNSDescription = "null";
-				}
-				peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("#", mDNSDescription);
+				
+				peerRow.addChild("td", "class", "peer-name").addChild("#", (mDNSServer == null ? "null" : mDNSServer));
+				peerRow.addChild("td", "class", "peer-address").addChild("#", (mDNSHost == null ? "null" : mDNSHost) + ':' + (mDNSPort == null ? "null": mDNSPort));
+				peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("#", (mDNSDescription == null ? "null" : mDNSDescription));
 			}
 		}else{
-			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-warning");
-			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
 			peerTableInfoboxHeader.addChild("#", "Nothing found!");
-			HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
 			peerTableInfoboxContent.addChild("#", "No freenet node found on the local subnet, sorry!");
 		}
 		
