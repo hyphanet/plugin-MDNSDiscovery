@@ -44,6 +44,9 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 	public void terminate() {
 		jmdns.unregisterAllServices();
 		goon = false;
+		synchronized (this) {
+			notify();
+		}
 	}
 
 	public void runPlugin(PluginRespirator pr) {
@@ -60,7 +63,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 		try{
 			// Create the multicast listener
 			jmdns = new JmDNS();
-			final String address = "server on " + jmdns.getLocalHost() + " (" + pr.getNode().getMyName();
+			final String address = "server on " + jmdns.getLocalHost().getName();
 			
 			// Advertise Fproxy
 			if(nodeConfig.get("fproxy").getBoolean("enabled")){
@@ -155,7 +158,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			for(int i=0; i<foundNodes.length; i++){
 				peerRow.addChild("td", "class", "peer-name").addChild("#", foundNodes[i].getServer());
 				peerRow.addChild("td", "class", "peer-address").addChild("#", foundNodes[i].getHostAddress()+':'+foundNodes[i].getPort());
-				peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("#", foundNodes[i].getName());
+				peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("#", foundNodes[i].getTextString());
 			}
 		}else{
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-warning");

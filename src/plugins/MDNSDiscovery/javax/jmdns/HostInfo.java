@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  * @version %I%, %G%
  * @author	Pierre Frisch, Werner Randelshofer
  */
-class HostInfo
+public class HostInfo
 {
     private static Logger logger = Logger.getLogger(HostInfo.class.toString());
     protected String name;
