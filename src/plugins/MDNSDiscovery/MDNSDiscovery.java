@@ -43,8 +43,12 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 	 * Called upon plugin unloading : we unregister advertised services
 	 */
 	public void terminate() {
-		jmdns.unregisterAllServices();
-		jmdns.removeServiceListener(MDNSDiscovery.freenetServiceType, serviceListener);
+		//try {
+		//	jmdns.unregisterAllServices();
+		//} catch (Throwable e) {
+		//	e.printStackTrace();
+		//}
+		//jmdns.removeServiceListener(MDNSDiscovery.freenetServiceType, serviceListener);
 		jmdns.close();
 		goon = false;
 		synchronized (this) {
@@ -66,7 +70,18 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 		try{
 			// Create the multicast listener
 			jmdns = new JmDNS();
-			final String address = "server on " + jmdns.getLocalHost().getName();
+			String truncatedNodeName = pr.getNode().getMyName();
+			if(truncatedNodeName.length() > 63) {
+				truncatedNodeName = truncatedNodeName.substring(0, 62);
+			}
+			String truncatedHostName = pr.getNode().getMyName();
+			if(truncatedHostName.length() > 63) {
+				truncatedHostName = truncatedHostName.substring(0, 62);
+			}
+			if(truncatedHostName.endsWith(".")) {
+				truncatedHostName = truncatedHostName.substring(0, truncatedHostName.length() - 2);
+			}
+			final String address = "server."+truncatedNodeName+"."+truncatedHostName;
 			
 			// Advertise Fproxy
 			if(nodeConfig.get("fproxy").getBoolean("enabled")){
@@ -158,12 +173,33 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "The node's network address as IP:Port", "border-bottom: 1px dotted; cursor: help;" }, "Address");
 			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "A description of the service.", "border-bottom: 1px dotted; cursor: help;" }, "Description");
 			
-			HTMLNode peerRow = peerTable.addChild("tr");
+			HTMLNode peerRow;
+			String mDNSServer;
+			String mDNSHost;
+			String mDNSPort;
+			String mDNSDescription;
 			
 			for(int i=0; i<foundNodes.length; i++){
-				peerRow.addChild("td", "class", "peer-name").addChild("#", foundNodes[i].getServer());
-				peerRow.addChild("td", "class", "peer-address").addChild("#", foundNodes[i].getHostAddress()+':'+foundNodes[i].getPort());
-				peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("#", foundNodes[i].getTextString());
+			    peerRow = peerTable.addChild("tr");
+				mDNSServer = foundNodes[i].getServer();
+				if(mDNSServer == null) {
+					mDNSServer = "null";
+				}
+				peerRow.addChild("td", "class", "peer-name").addChild("#", mDNSServer);
+				mDNSHost = foundNodes[i].getHostAddress();
+				mDNSPort = Integer.toString(foundNodes[i].getPort());
+				if(mDNSHost == null) {
+					mDNSHost = "null";
+				}
+				if(mDNSPort == null) {
+					mDNSPort = "null";
+				}
+				peerRow.addChild("td", "class", "peer-address").addChild("#", mDNSHost+':'+mDNSPort);
+				mDNSDescription = foundNodes[i].getTextString();
+				if(mDNSDescription == null) {
+					mDNSDescription = "null";
+				}
+				peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("#", mDNSDescription);
 			}
 		}else{
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-warning");
