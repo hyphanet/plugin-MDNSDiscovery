@@ -59,7 +59,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 		nodeConfig = pr.getNode().config;
 		pageMaker = new PageMaker("clean");
 		ourAdvertisedServices = new LinkedList();
-		final ServiceInfo fproxyInfo, tcmiInfo, fcpInfo, nodeInfo;
+		final ServiceInfo fproxyInfo, TMCIInfo, fcpInfo, nodeInfo;
 		
 		try{
 			// Create the multicast listener
@@ -85,12 +85,12 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 				ourAdvertisedServices.add(fcpInfo);
 			}
 			
-			// Advertise TCMI
+			// Advertise TMCI
 			if(nodeConfig.get("console").getBoolean("enabled")){
-				tcmiInfo = new ServiceInfo("_telnet._tcp.local.", truncateAndSanitize("Freenet 0.7 TCMI " + address),
+				TMCIInfo = new ServiceInfo("_telnet._tcp.local.", truncateAndSanitize("Freenet 0.7 TMCI " + address),
 						nodeConfig.get("console").getInt("port"), 0, 0, "");
-				jmdns.registerService(tcmiInfo);
-				ourAdvertisedServices.add(tcmiInfo);
+				jmdns.registerService(TMCIInfo);
+				ourAdvertisedServices.add(TMCIInfo);
 			}
 				
 			// Advertise the node
