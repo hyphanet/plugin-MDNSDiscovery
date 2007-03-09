@@ -27,9 +27,9 @@ import freenet.support.api.HTTPRequest;
  * @see http://jmdns.sourceforge.net/
  * 
  * TODO: We shouldn't start a thread at all ... but they are issues on startup (the configuration framework isn't available yet)
- * TODO: We shouldn't advertise services if they aren't reachable (ie: bound to localhost)
  * TODO: We will need to manage the list on our own insteed of requesting it for each http request
- * TODO: Plug into config. callbacks to reflect changes
+ * TODO: Plug into config. callbacks to reflect changes @see #1217
+ * TODO: Maybe we should make add forms onto that toadlet and let the user choose what to advertise or not 
  */
 public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 	public static String freenetServiceType = "_freenet._udp.local.";
@@ -70,7 +70,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			jmdns.addServiceListener(MDNSDiscovery.freenetServiceType, new NodeMDNSListener(this));
 			
 			// Advertise Fproxy
-			if(nodeConfig.get("fproxy").getBoolean("enabled")){
+			if(nodeConfig.get("fproxy").getBoolean("enabled") && !nodeConfig.get("fproxy").getOption("bindTo").isDefault()){
 				fproxyInfo = new ServiceInfo("_http._tcp.local.", truncateAndSanitize("Freenet 0.7 Fproxy " + address),
 						nodeConfig.get("fproxy").getInt("port"), 0, 0, "path=/");
 				jmdns.registerService(fproxyInfo);
@@ -78,7 +78,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			}
 
 			// Advertise FCP
-			if(nodeConfig.get("fcp").getBoolean("enabled")){
+			if(nodeConfig.get("fcp").getBoolean("enabled") && !nodeConfig.get("fcp").getOption("bindTo").isDefault()){
 				fcpInfo = new ServiceInfo("_fcp._tcp.local.", truncateAndSanitize("Freenet 0.7 FCP " + address),
 						nodeConfig.get("fcp").getInt("port"), 0, 0, "");
 				jmdns.registerService(fcpInfo);
@@ -86,7 +86,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			}
 			
 			// Advertise TMCI
-			if(nodeConfig.get("console").getBoolean("enabled")){
+			if(nodeConfig.get("console").getBoolean("enabled") && !nodeConfig.get("console").getOption("bindTo").isDefault()){
 				TMCIInfo = new ServiceInfo("_telnet._tcp.local.", truncateAndSanitize("Freenet 0.7 TMCI " + address),
 						nodeConfig.get("console").getInt("port"), 0, 0, "");
 				jmdns.registerService(TMCIInfo);
@@ -106,7 +106,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 		while(goon){
 			synchronized (this) {
 				try{
-					wait(5000);
+					wait(Long.MAX_VALUE);
 				}catch (InterruptedException e) {}	
 			}
 		}
@@ -121,6 +121,8 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 		
         public void serviceAdded(ServiceEvent event) {
             System.out.println("Service added   : " + event.getName()+"."+event.getType());
+            // Force the gathering of informations
+			jmdns.getServiceInfo(MDNSDiscovery.freenetServiceType, event.getName());
             synchronized (plugin) {
                 plugin.notify();				
 			}
@@ -188,6 +190,22 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 		PrintServices(contentNode, "The following services are being broadcast from this node :", (ServiceInfo[])ourAdvertisedServices.toArray(new ServiceInfo[ourAdvertisedServices.size()]));
 
 		PrintServices(contentNode, "The following nodes have been found on the local subnet :", foundNodes);
+		
+		if(ourAdvertisedServices.size() < 3){
+			HTMLNode disabledServicesInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode disabledServicesInfoboxHeader = disabledServicesInfobox.addChild("div", "class", "infobox-header");
+			HTMLNode disabledServicesInfoboxContent = disabledServicesInfobox.addChild("div", "class", "infobox-content");
+
+			disabledServicesInfoboxHeader.addChild("#", "Disabled services");
+			
+			disabledServicesInfoboxContent.addChild("#", "The following services won't be advertised on the local network" +
+					" because they are either disabled ot bound to the local interface :");
+			
+			HTMLNode disabledServicesList = disabledServicesInfoboxContent.addChild("ul", "id", "disabled-service-list");
+			
+			for(int i=0; i<ourAdvertisedServices.size(); i++)
+				disabledServicesList.addChild("li").addChild("#", ((ServiceInfo) ourAdvertisedServices.get(i)).getName());
+		}
 
 		return pageNode.generate();
 	}
