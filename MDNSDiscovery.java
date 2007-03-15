@@ -37,7 +37,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 	private JmDNS jmdns;
 	private Config nodeConfig;
 	private PageMaker pageMaker;
-	private LinkedList ourAdvertisedServices;
+	private LinkedList ourAdvertisedServices, ourDisabledServices;
 	
 	/**
 	 * Called upon plugin unloading : we unregister advertised services
@@ -59,6 +59,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 		nodeConfig = pr.getNode().config;
 		pageMaker = new PageMaker("clean");
 		ourAdvertisedServices = new LinkedList();
+		ourDisabledServices = new LinkedList();
 		final ServiceInfo fproxyInfo, TMCIInfo, fcpInfo, nodeInfo;
 		
 		try{
@@ -70,28 +71,31 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			jmdns.addServiceListener(MDNSDiscovery.freenetServiceType, new NodeMDNSListener(this));
 			
 			// Advertise Fproxy
+			fproxyInfo = new ServiceInfo("_http._tcp.local.", truncateAndSanitize("Freenet 0.7 Fproxy " + address),
+					nodeConfig.get("fproxy").getInt("port"), 0, 0, "path=/");
 			if(nodeConfig.get("fproxy").getBoolean("enabled") && !nodeConfig.get("fproxy").getOption("bindTo").isDefault()){
-				fproxyInfo = new ServiceInfo("_http._tcp.local.", truncateAndSanitize("Freenet 0.7 Fproxy " + address),
-						nodeConfig.get("fproxy").getInt("port"), 0, 0, "path=/");
 				jmdns.registerService(fproxyInfo);
 				ourAdvertisedServices.add(fproxyInfo);
-			}
+			}else
+				ourDisabledServices.add(fproxyInfo);
 
 			// Advertise FCP
+			fcpInfo = new ServiceInfo("_fcp._tcp.local.", truncateAndSanitize("Freenet 0.7 FCP " + address),
+					nodeConfig.get("fcp").getInt("port"), 0, 0, "");
 			if(nodeConfig.get("fcp").getBoolean("enabled") && !nodeConfig.get("fcp").getOption("bindTo").isDefault()){
-				fcpInfo = new ServiceInfo("_fcp._tcp.local.", truncateAndSanitize("Freenet 0.7 FCP " + address),
-						nodeConfig.get("fcp").getInt("port"), 0, 0, "");
 				jmdns.registerService(fcpInfo);
 				ourAdvertisedServices.add(fcpInfo);
-			}
+			}else
+				ourDisabledServices.add(fcpInfo);
 			
 			// Advertise TMCI
+			TMCIInfo = new ServiceInfo("_telnet._tcp.local.", truncateAndSanitize("Freenet 0.7 TMCI " + address),
+					nodeConfig.get("console").getInt("port"), 0, 0, "");
 			if(nodeConfig.get("console").getBoolean("enabled") && !nodeConfig.get("console").getOption("bindTo").isDefault()){
-				TMCIInfo = new ServiceInfo("_telnet._tcp.local.", truncateAndSanitize("Freenet 0.7 TMCI " + address),
-						nodeConfig.get("console").getInt("port"), 0, 0, "");
 				jmdns.registerService(TMCIInfo);
 				ourAdvertisedServices.add(TMCIInfo);
-			}
+			}else
+				ourDisabledServices.add(TMCIInfo);
 				
 			// Advertise the node
 			nodeInfo = new ServiceInfo(MDNSDiscovery.freenetServiceType, truncateAndSanitize("Freenet 0.7 Node " + address),
@@ -203,8 +207,8 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			
 			HTMLNode disabledServicesList = disabledServicesInfoboxContent.addChild("ul", "id", "disabled-service-list");
 			
-			for(int i=0; i<ourAdvertisedServices.size(); i++)
-				disabledServicesList.addChild("li").addChild("#", ((ServiceInfo) ourAdvertisedServices.get(i)).getName());
+			for(int i=0; i<ourDisabledServices.size(); i++)
+				disabledServicesList.addChild("li").addChild("#", ((ServiceInfo) ourDisabledServices.get(i)).getName());
 		}
 
 		return pageNode.generate();
