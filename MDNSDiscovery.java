@@ -186,7 +186,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 	}
 		
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
-		HTMLNode pageNode = pageMaker.getPageNode("MDNSDiscovery plugin configuration page", false);
+		HTMLNode pageNode = pageMaker.getPageNode("MDNSDiscovery plugin configuration page", false, null /* FIXME */);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 
 		ServiceInfo[] foundNodes = jmdns.list(MDNSDiscovery.freenetServiceType);
