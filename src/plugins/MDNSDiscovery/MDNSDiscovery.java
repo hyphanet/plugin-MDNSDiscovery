@@ -11,7 +11,6 @@ import plugins.MDNSDiscovery.javax.jmdns.JmDNS;
 import plugins.MDNSDiscovery.javax.jmdns.ServiceEvent;
 import plugins.MDNSDiscovery.javax.jmdns.ServiceInfo;
 import plugins.MDNSDiscovery.javax.jmdns.ServiceListener;
-import freenet.clients.http.PageMaker;
 import freenet.config.Config;
 import freenet.pluginmanager.*;
 import freenet.support.HTMLNode;
@@ -31,13 +30,13 @@ import freenet.support.api.HTTPRequest;
  * TODO: Plug into config. callbacks to reflect changes @see #1217
  * TODO: Maybe we should make add forms onto that toadlet and let the user choose what to advertise or not 
  */
-public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
+public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
 	public static String freenetServiceType = "_freenet._udp.local.";
 	private boolean goon = true;
 	private JmDNS jmdns;
 	private Config nodeConfig;
-	private PageMaker pageMaker;
 	private LinkedList ourAdvertisedServices, ourDisabledServices;
+	private PluginRespirator pr;
 	
 	/**
 	 * Called upon plugin unloading : we unregister advertised services
@@ -49,6 +48,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 	}
 
 	public void runPlugin(PluginRespirator pr) {
+		this.pr = pr;
 		// wait until the node is initialised.
 		while(pr.getNode() == null || !pr.getNode().isHasStarted()){
 			try{
@@ -57,7 +57,6 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 		}
 			
 		nodeConfig = pr.getNode().config;
-		pageMaker = new PageMaker("clean");
 		ourAdvertisedServices = new LinkedList();
 		ourDisabledServices = new LinkedList();
 		final ServiceInfo fproxyInfo, TMCIInfo, fcpInfo, nodeInfo;
@@ -186,8 +185,8 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 	}
 		
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
-		HTMLNode pageNode = pageMaker.getPageNode("MDNSDiscovery plugin configuration page", false, null /* FIXME */);
-		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+		HTMLNode pageNode = pr.getPageMaker().getPageNode("MDNSDiscovery plugin configuration page", false, null);
+		HTMLNode contentNode = pr.getPageMaker().getContentNode(pageNode);
 
 		ServiceInfo[] foundNodes = jmdns.list(MDNSDiscovery.freenetServiceType);
 
@@ -210,7 +209,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 			for(int i=0; i<ourDisabledServices.size(); i++)
 				disabledServicesList.addChild("li").addChild("#", ((ServiceInfo) ourDisabledServices.get(i)).getName());
 		}
-
+		
 		return pageNode.generate();
 	}
 	
@@ -219,7 +218,8 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP{
 	}
 	
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
-		throw new PluginHTTPException();
+		System.out.println("received : "+request.toString());
+		return request.toString();
 	}
 	
 	/**
