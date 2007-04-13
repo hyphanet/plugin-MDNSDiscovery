@@ -214,12 +214,11 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
 	}
 	
 	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
-		throw new PluginHTTPException();
+		throw new PluginHTTPException("PUT requests aren't allowed!", "/plugins");
 	}
 	
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
-		System.out.println("received : "+request.toString());
-		return request.toString();
+		throw new PluginHTTPException("POST requests aren't allowed!", "/plugins");
 	}
 	
 	/**
