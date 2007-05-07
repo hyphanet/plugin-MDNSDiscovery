@@ -17,7 +17,7 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
- * This plugin implements Zeroconf (called Bonjour/RendezVous by apple) support on a freenet node.
+ * This plugin implements Zeroconf (called Bonjour/RendezVous by apple) support on a Freenet node.
  * 
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  *
@@ -180,7 +180,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
 			}
 		}else{
 			peerTableInfoboxHeader.addChild("#", description);
-			peerTableInfoboxContent.addChild("#", "No freenet resources found on the local subnet, sorry!");
+			peerTableInfoboxContent.addChild("#", "No Freenet resources found on the local subnet, sorry!");
 		}
 	}
 		
