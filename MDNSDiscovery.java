@@ -5,6 +5,7 @@
 package plugins.MDNSDiscovery;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import plugins.MDNSDiscovery.javax.jmdns.JmDNS;
@@ -26,7 +27,6 @@ import freenet.support.api.HTTPRequest;
  * @see http://jmdns.sourceforge.net/
  * 
  * TODO: We shouldn't start a thread at all ... but they are issues on startup (the configuration framework isn't available yet)
- * TODO: We will need to manage the list on our own insteed of requesting it for each http request
  * TODO: Plug into config. callbacks to reflect changes @see #1217
  * TODO: Maybe we should make add forms onto that toadlet and let the user choose what to advertise or not 
  */
@@ -35,7 +35,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
 	private boolean goon = true;
 	private JmDNS jmdns;
 	private Config nodeConfig;
-	private LinkedList ourAdvertisedServices, ourDisabledServices;
+	private LinkedList ourAdvertisedServices, ourDisabledServices, foundNodes;
 	private PluginRespirator pr;
 	
 	/**
@@ -59,6 +59,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
 		nodeConfig = pr.getNode().config;
 		ourAdvertisedServices = new LinkedList();
 		ourDisabledServices = new LinkedList();
+		foundNodes = new LinkedList();
 		final ServiceInfo fproxyInfo, TMCIInfo, fcpInfo, nodeInfo;
 		
 		try{
@@ -133,6 +134,17 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
         
         public void serviceRemoved(ServiceEvent event) {
             System.out.println("Service removed : " + event.getName()+"."+event.getType());
+            if(MDNSDiscovery.freenetServiceType.equals(event.getType())) {
+            	synchronized (foundNodes) {
+					Iterator it = foundNodes.iterator();
+					ServiceInfo toRemove = event.getInfo();
+					while(it.hasNext()) {
+						ServiceInfo si = (ServiceInfo)it.next();
+						if(toRemove.equals(si))
+							foundNodes.remove(si);
+					}
+				}
+            }
             synchronized (plugin) {
                 plugin.notify();				
 			}
@@ -140,6 +152,11 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
         
         public void serviceResolved(ServiceEvent event) {
             System.out.println("Service resolved: " + event.getInfo());
+            if(MDNSDiscovery.freenetServiceType.equals(event.getType()))
+            	synchronized (foundNodes) {
+        			foundNodes.add(event.getInfo());				
+            	}
+
             synchronized (plugin) {
                 plugin.notify();				
 			}
@@ -188,11 +205,12 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
 		HTMLNode pageNode = pr.getPageMaker().getPageNode("MDNSDiscovery plugin configuration page", false, null);
 		HTMLNode contentNode = pr.getPageMaker().getContentNode(pageNode);
 
-		ServiceInfo[] foundNodes = jmdns.list(MDNSDiscovery.freenetServiceType);
-
 		PrintServices(contentNode, "The following services are being broadcast from this node :", (ServiceInfo[])ourAdvertisedServices.toArray(new ServiceInfo[ourAdvertisedServices.size()]));
-
-		PrintServices(contentNode, "The following nodes have been found on the local subnet :", foundNodes);
+		
+		synchronized (foundNodes) {
+			if(foundNodes.size() > 0)
+				PrintServices(contentNode, "The following nodes have been found on the local subnet :", (ServiceInfo[])foundNodes.toArray(new ServiceInfo[foundNodes.size()]));
+		}
 		
 		if(ourAdvertisedServices.size() < 3){
 			HTMLNode disabledServicesInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
