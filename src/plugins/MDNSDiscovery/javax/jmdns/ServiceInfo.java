@@ -364,7 +364,7 @@ public class ServiceInfo implements DNSListener
         {
             return null;
         }
-        if (data == NO_VALUE)
+        if (data.equals(NO_VALUE))
         {
             return "true";
         }
