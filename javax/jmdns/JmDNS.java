@@ -1091,7 +1091,12 @@ public class JmDNS
             {
                 logger.throwing(getClass().toString(), "send(DNSOutgoing) - JmDNS can not parse what it sends!!!", e);
             }
-            socket.send(packet);
+            
+            if(packet.getLength() > socket.getSendBufferSize()) {
+            	logger.log(Level.SEVERE , "send(DNSOutgoing) - JmDNS can not send such a big packet!!!");
+            	return;
+            } else
+            	socket.send(packet);
         }
     }
 
