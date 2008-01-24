@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.SocketTimeoutException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -270,6 +271,10 @@ public class JmDNS
             socket.setNetworkInterface(hostInfo.getInterface());
         }
         socket.setTimeToLive(255);
+        // Wake up every 1000ms to give an opportunity to send messages!
+        // Both sending and receiving take the same lock, and the lock is kept while the socket is waiting for data.
+        // It looks like this may have caused the shutdown to never happen.
+        socket.setSoTimeout(1000);
         socket.joinGroup(group);
     }
 
@@ -1114,7 +1119,11 @@ public class JmDNS
                 while (state != DNSState.CANCELED)
                 {
                     packet.setLength(buf.length);
-                    socket.receive(packet);
+                    try {
+                    	socket.receive(packet);
+                    } catch (SocketTimeoutException e) {
+                    	continue;
+                    }
                     if (state == DNSState.CANCELED)
                     {
                         break;
