@@ -32,7 +32,8 @@ import plugins.MDNSDiscovery.javax.jmdns.*;
  * @version 	%I%, %G%
  */
 public class Browser extends JFrame implements ServiceListener, ServiceTypeListener, ListSelectionListener {
-    JmDNS jmdns;
+ 	private static final long serialVersionUID = 9039623753775294448L;
+	JmDNS jmdns;
     Vector headers;
     String type;
     DefaultListModel types;
@@ -237,7 +238,8 @@ public class Browser extends JFrame implements ServiceListener, ServiceTypeListe
      * Table data.
      */
     class ServiceTableModel extends AbstractTableModel {
-        public String getColumnName(int column) {
+		private static final long serialVersionUID = -2699106046848786311L;
+		public String getColumnName(int column) {
             switch (column) {
                 case 0: return "service";
                 case 1: return "address";
