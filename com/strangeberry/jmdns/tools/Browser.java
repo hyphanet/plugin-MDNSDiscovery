@@ -113,7 +113,7 @@ public class Browser extends JFrame implements ServiceListener, ServiceTypeListe
             jmdns.registerServiceType(list[i]);
         }
         
-        show();
+        setVisible(true);
     }
     
     /**
