@@ -5,8 +5,6 @@
 
 package plugins.MDNSDiscovery.javax.jmdns;
 
-import java.util.logging.Logger;
-
 /**
  * A DNS question.
  *
@@ -15,8 +13,6 @@ import java.util.logging.Logger;
  */
 final class DNSQuestion extends DNSEntry
 {
-    private static Logger logger = Logger.getLogger(DNSQuestion.class.toString());
-
     /**
      * Create a question.
      */

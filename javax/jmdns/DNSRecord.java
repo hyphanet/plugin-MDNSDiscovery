@@ -397,7 +397,6 @@ abstract class DNSRecord extends DNSEntry
      */
     static class Pointer extends DNSRecord
     {
-        private static Logger logger = Logger.getLogger(Pointer.class.toString());
         String alias;
 
         Pointer(String name, int type, int clazz, int ttl, String alias)
@@ -448,7 +447,6 @@ abstract class DNSRecord extends DNSEntry
 
     static class Text extends DNSRecord
     {
-        private static Logger logger = Logger.getLogger(Text.class.toString());
         byte text[];
 
         Text(String name, int type, int clazz, int ttl, byte text[])

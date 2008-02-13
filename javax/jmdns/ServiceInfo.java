@@ -12,7 +12,6 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.TimerTask;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 /**
  * JmDNS service information.
@@ -22,7 +21,6 @@ import java.util.logging.Logger;
  */
 public class ServiceInfo implements DNSListener
 {
-    private static Logger logger = Logger.getLogger(ServiceInfo.class.toString());
     public final static byte[] NO_VALUE = new byte[0];
     JmDNS dns;
     
