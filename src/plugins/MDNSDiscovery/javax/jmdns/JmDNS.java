@@ -721,44 +721,6 @@ public class JmDNS
     }
 
     /**
-     * Generate a possibly unique name for a host using the information we
-     * have in the cache.
-     *
-     * @return returns true, if the name of the host had to be changed.
-     */
-    private boolean makeHostNameUnique(DNSRecord.Address host)
-    {
-        String originalName = host.getName();
-
-        boolean collision;
-        do
-        {
-            collision = false;
-
-            // Check for collision in cache
-            for (DNSCache.CacheNode j = cache.find(host.getName().toLowerCase()); j != null; j = j.next())
-            {
-                if (false)
-                {
-                    host.name = incrementName(host.getName());
-                    collision = true;
-                    break;
-                }
-            }
-        }
-        while (collision);
-
-        if (originalName.equals(host.getName()))
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
-
-    /**
      * Generate a possibly unique name for a service using the information we
      * have in the cache.
      *

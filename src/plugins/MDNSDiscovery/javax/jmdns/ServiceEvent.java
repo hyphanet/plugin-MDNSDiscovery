@@ -14,7 +14,8 @@ import java.util.EventObject;
  */
 public class ServiceEvent extends EventObject
 {
-    /**
+	private static final long serialVersionUID = -4428198292275178307L;
+	/**
      * The type name of the service.
      */
     private String type;
