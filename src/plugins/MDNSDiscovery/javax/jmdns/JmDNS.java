@@ -729,7 +729,6 @@ public class JmDNS
     private boolean makeHostNameUnique(DNSRecord.Address host)
     {
         String originalName = host.getName();
-        long now = System.currentTimeMillis();
 
         boolean collision;
         do
@@ -739,7 +738,6 @@ public class JmDNS
             // Check for collision in cache
             for (DNSCache.CacheNode j = cache.find(host.getName().toLowerCase()); j != null; j = j.next())
             {
-                DNSRecord a = (DNSRecord) j.getValue();
                 if (false)
                 {
                     host.name = incrementName(host.getName());
@@ -1756,8 +1754,6 @@ public class JmDNS
                 {
                     try
                     {
-                        long now = System.currentTimeMillis();
-                        long expirationTime = now + 1; //=now+DNSConstants.KNOWN_ANSWER_TTL;
                         boolean isUnicast = (port != DNSConstants.MDNS_PORT);
 
 
@@ -2484,7 +2480,6 @@ public class JmDNS
      */
     private static class ServiceCollector implements ServiceListener
     {
-        private static Logger logger = Logger.getLogger(ServiceCollector.class.toString());
         /**
          * A set of collected service instance names.
          */

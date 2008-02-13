@@ -5,7 +5,6 @@
 package plugins.MDNSDiscovery.javax.jmdns;
 
 import java.util.EventObject;
-import java.util.logging.Logger;
 
 /**
  * ServiceEvent.
@@ -15,7 +14,6 @@ import java.util.logging.Logger;
  */
 public class ServiceEvent extends EventObject
 {
-    private static Logger logger = Logger.getLogger(ServiceEvent.class.toString());
     /**
      * The type name of the service.
      */

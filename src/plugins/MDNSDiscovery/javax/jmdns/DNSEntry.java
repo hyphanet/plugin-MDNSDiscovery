@@ -5,8 +5,6 @@
 
 package plugins.MDNSDiscovery.javax.jmdns;
 
-import java.util.logging.Logger;
-
 /**
  * DNS entry with a name, type, and class. This is the base
  * class for questions and records.
@@ -16,7 +14,6 @@ import java.util.logging.Logger;
  */
 class DNSEntry
 {
-    private static Logger logger = Logger.getLogger(DNSEntry.class.toString());
     String key;
     String name;
     int type;
