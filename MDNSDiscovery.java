@@ -32,7 +32,7 @@ import freenet.support.api.HTTPRequest;
  */
 public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
 	public static String freenetServiceType = "_freenet._udp.local.";
-	private boolean goon = true;
+	private volatile  boolean goon = true;
 	private JmDNS jmdns;
 	private Config nodeConfig;
 	private LinkedList ourAdvertisedServices, ourDisabledServices, foundNodes;
@@ -44,7 +44,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
 	public synchronized void terminate() {
 		jmdns.close();
 		goon = false;
-		notify();
+		notifyAll();
 	}
 
 	public void runPlugin(PluginRespirator pr) {
