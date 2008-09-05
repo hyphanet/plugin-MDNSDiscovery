@@ -2323,7 +2323,7 @@ public class JmDNS
 
     public String toString()
     {
-        StringBuffer aLog = new StringBuffer();
+        StringBuilder aLog = new StringBuilder();
         aLog.append("\t---- Services -----");
         if (services != null)
         {
@@ -2502,7 +2502,7 @@ public class JmDNS
 
         public String toString()
         {
-            StringBuffer aLog = new StringBuffer();
+            StringBuilder aLog = new StringBuilder();
             synchronized (infos)
             {
                 for (Iterator k = infos.keySet().iterator(); k.hasNext();)

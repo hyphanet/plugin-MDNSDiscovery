@@ -83,7 +83,7 @@ public class ServiceEvent extends EventObject
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append("<" + getClass().getName() + "> ");
         buf.append(super.toString());
         buf.append(" name ");

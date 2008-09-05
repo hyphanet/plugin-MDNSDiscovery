@@ -177,7 +177,7 @@ public class Browser extends JFrame implements ServiceListener, ServiceTypeListe
                 this.info.setText("service not found");
             } else {
                 
-                StringBuffer buf = new StringBuffer();
+                StringBuilder buf = new StringBuilder();
                 buf.append(name);
                 buf.append('.');
                 buf.append(type);

@@ -325,7 +325,7 @@ final class DNSOutgoing
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append(isQuery() ? "dns[query," : "dns[response,");
         //buf.append(packet.getAddress().getHostAddress());
         buf.append(':');

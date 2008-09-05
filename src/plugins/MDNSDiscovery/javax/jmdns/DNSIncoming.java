@@ -207,7 +207,7 @@ final class DNSIncoming
         return bytes;
     }
 
-    private void readUTF(StringBuffer buf, int off, int len) throws IOException
+    private void readUTF(StringBuilder buf, int off, int len) throws IOException
     {
         for (int end = off + len; off < end;)
         {
@@ -244,7 +244,7 @@ final class DNSIncoming
 
     private String readName() throws IOException
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         int off = this.off;
         int next = -1;
         int first = off;
@@ -290,7 +290,7 @@ final class DNSIncoming
      */
     String print(boolean dump)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append(toString() + "\n");
         for (Iterator iterator = questions.iterator(); iterator.hasNext();)
         {
@@ -367,7 +367,7 @@ final class DNSIncoming
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append(isQuery() ? "dns[query," : "dns[response,");
         if (packet.getAddress() != null)
         {
