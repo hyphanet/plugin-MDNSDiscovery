@@ -412,7 +412,7 @@ public class ServiceInfo implements DNSListener
      */
     String readUTF(byte data[], int off, int len)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         for (int end = off + len; off < end;)
         {
             int ch = data[off++] & 0xFF;
@@ -618,7 +618,7 @@ public class ServiceInfo implements DNSListener
 
     public String getNiceTextString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         for (int i = 0, len = text.length; i < len; i++)
         {
             if (i >= 20)
@@ -642,7 +642,7 @@ public class ServiceInfo implements DNSListener
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         buf.append("service[");
         buf.append(getQualifiedName());
         buf.append(',');

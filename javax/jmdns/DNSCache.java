@@ -239,7 +239,7 @@ class DNSCache
 
     public synchronized String toString()
     {
-        StringBuffer aLog = new StringBuffer();
+        StringBuilder aLog = new StringBuilder();
         aLog.append("\t---- cache ----");
         for (Iterator i = iterator(); i.hasNext();)
         {
