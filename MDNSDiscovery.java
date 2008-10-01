@@ -13,7 +13,10 @@ import plugins.MDNSDiscovery.javax.jmdns.ServiceEvent;
 import plugins.MDNSDiscovery.javax.jmdns.ServiceInfo;
 import plugins.MDNSDiscovery.javax.jmdns.ServiceListener;
 import freenet.config.Config;
-import freenet.pluginmanager.*;
+import freenet.pluginmanager.FredPlugin;
+import freenet.pluginmanager.FredPluginHTTP;
+import freenet.pluginmanager.PluginHTTPException;
+import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -229,10 +232,6 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
 		}
 		
 		return pageNode.generate();
-	}
-	
-	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
-		return null;
 	}
 	
 	public String handleHTTPPost(HTTPRequest request) throws PluginHTTPException {
