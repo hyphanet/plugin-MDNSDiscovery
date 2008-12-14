@@ -290,6 +290,8 @@ public class JmDNS
                 socket.close();
                 if (incomingListener != null)
                 {
+                	/* FIXME: This is probably not the proper way to shutdown. toad/nextgens said that threads are recycled so join is bad.
+                	 * Use notify()/wait() and a boolean instead. See freenet.support.TransferThread for an example. */
                     incomingListener.join();
                 }
             }
