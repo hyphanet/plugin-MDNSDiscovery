@@ -15,6 +15,7 @@ import plugins.MDNSDiscovery.javax.jmdns.ServiceListener;
 import freenet.config.Config;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginHTTP;
+import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
@@ -33,13 +34,14 @@ import freenet.support.api.HTTPRequest;
  * TODO: Plug into config. callbacks to reflect changes @see #1217
  * TODO: Maybe we should make add forms onto that toadlet and let the user choose what to advertise or not 
  */
-public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
+public class MDNSDiscovery implements FredPlugin, FredPluginHTTP, FredPluginRealVersioned {
 	public static String freenetServiceType = "_freenet._udp.local.";
 	private volatile  boolean goon = true;
 	private JmDNS jmdns;
 	private Config nodeConfig;
 	private LinkedList ourAdvertisedServices, ourDisabledServices, foundNodes;
 	private PluginRespirator pr;
+	private static final long version = 1;
 	
 	/**
 	 * Called upon plugin unloading : we unregister advertised services
@@ -255,5 +257,9 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP {
 		if(str.length() > 62)
 			str = str.substring(0, 62);
 		return str;
+	}
+
+	public long getRealVersion() {
+		return version;
 	}
 }
