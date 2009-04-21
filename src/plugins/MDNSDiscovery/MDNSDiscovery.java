@@ -70,7 +70,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP, FredPluginReal
 		
 		try{
 			// Create the multicast listener
-	        jmdns = JmDNS.create(InetAddress.getLocalHost());
+	        jmdns = JmDNS.create();
 
 			final String address = "server -=" + pr.getNode().getMyName() + "=-";
 			
