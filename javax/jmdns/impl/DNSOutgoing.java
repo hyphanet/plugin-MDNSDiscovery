@@ -3,7 +3,7 @@
 //Original license LGPL
 
 
-package plugins.MDNSDiscovery.javax.jmdns;
+package plugins.MDNSDiscovery.javax.jmdns.impl;
 
 import java.io.IOException;
 import java.util.Hashtable;
@@ -17,9 +17,15 @@ import java.util.logging.Logger;
  * @version %I%, %G%
  * @author	Arthur van Hoff, Rick Blair, Werner Randelshofer
  */
-final class DNSOutgoing
+public final class DNSOutgoing
 {
-    private static Logger logger = Logger.getLogger(DNSOutgoing.class.toString());
+    /**
+     * This can be used to turn off domain name compression.  This was helpful for 
+     * tracking problems interacting with other mdns implementations.
+     */
+    public static  boolean USE_DOMAIN_NAME_COMPRESSION = true;
+    
+    private static Logger logger = Logger.getLogger(DNSOutgoing.class.getName());
     int id;
     int flags;
     private boolean multicast;
@@ -36,7 +42,7 @@ final class DNSOutgoing
     /**
      * Create an outgoing multicast query or response.
      */
-    DNSOutgoing(int flags)
+    public DNSOutgoing(int flags)
     {
         this(flags, true);
     }
@@ -44,7 +50,7 @@ final class DNSOutgoing
     /**
      * Create an outgoing query or response.
      */
-    DNSOutgoing(int flags, boolean multicast)
+    public DNSOutgoing(int flags, boolean multicast)
     {
         this.flags = flags;
         this.multicast = multicast;
@@ -56,7 +62,7 @@ final class DNSOutgoing
     /**
      * Add a question to the message.
      */
-    void addQuestion(DNSQuestion rec) throws IOException
+    public void addQuestion(DNSQuestion rec) throws IOException
     {
         if (numAnswers > 0 || numAuthorities > 0 || numAdditionals > 0)
         {
@@ -96,7 +102,7 @@ final class DNSOutgoing
     /**
      * Add an answer to the message.
      */
-    void addAnswer(DNSRecord rec, long now) throws IOException
+    public void addAnswer(DNSRecord rec, long now) throws IOException
     {
         if (numAuthorities > 0 || numAdditionals > 0)
         {
@@ -117,7 +123,7 @@ final class DNSOutgoing
     /**
      * Add an authorative answer to the message.
      */
-    void addAuthorativeAnswer(DNSRecord rec) throws IOException
+    public void addAuthorativeAnswer(DNSRecord rec) throws IOException
     {
         if (numAdditionals > 0)
         {
@@ -228,6 +234,11 @@ final class DNSOutgoing
 
     void writeName(String name) throws IOException
     {
+        writeName(name, true);
+    }
+    
+    void writeName(String name, boolean useCompression) throws IOException
+    {
         while (true)
         {
             int n = name.indexOf('.');
@@ -240,21 +251,23 @@ final class DNSOutgoing
                 writeByte(0);
                 return;
             }
-            Integer offset = (Integer) names.get(name);
-            if (offset != null)
-            {
-                int val = offset.intValue();
-
-                if (val > off)
+            if(useCompression && USE_DOMAIN_NAME_COMPRESSION){
+                Integer offset = (Integer) names.get(name);
+                if (offset != null)
                 {
-                    logger.log(Level.WARNING, "DNSOutgoing writeName failed val=" + val + " name=" + name);
-                }
+                    int val = offset.intValue();
 
-                writeByte((val >> 8) | 0xC0);
-                writeByte(val);
-                return;
+                    if (val > off)
+                    {
+                        logger.log(Level.WARNING, "DNSOutgoing writeName failed val=" + val + " name=" + name);
+                    }
+
+                    writeByte((val >> 8) | 0xC0);
+                    writeByte(val & 0xFF);
+                    return;
+                }
+                names.put(name, Integer.valueOf(off+""));
             }
-            names.put(name, new Integer(off));
             writeUTF(name, 0, n);
             name = name.substring(n);
             if (name.startsWith("."))
@@ -279,7 +292,7 @@ final class DNSOutgoing
             writeName(rec.name);
             writeShort(rec.type);
             writeShort(rec.clazz | ((rec.unique && multicast) ? DNSConstants.CLASS_UNIQUE : 0));
-            writeInt((now == 0) ? rec.ttl : rec.getRemainingTTL(now));
+            writeInt((now == 0) ? rec.getTtl() : rec.getRemainingTTL(now));
             writeShort(0);
             int start = off;
             rec.write(this);
@@ -325,7 +338,7 @@ final class DNSOutgoing
 
     public String toString()
     {
-        StringBuilder buf = new StringBuilder();
+        StringBuffer buf = new StringBuffer();
         buf.append(isQuery() ? "dns[query," : "dns[response,");
         //buf.append(packet.getAddress().getHostAddress());
         buf.append(':');

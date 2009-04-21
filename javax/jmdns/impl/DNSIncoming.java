@@ -4,10 +4,11 @@
 
 
 
-package plugins.MDNSDiscovery.javax.jmdns;
+package plugins.MDNSDiscovery.javax.jmdns.impl;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -19,11 +20,17 @@ import java.util.logging.Logger;
  * Parse an incoming DNS message into its components.
  *
  * @version %I%, %G%
- * @author	Arthur van Hoff, Werner Randelshofer, Pierre Frisch
+ * @author	Arthur van Hoff, Werner Randelshofer, Pierre Frisch, Daniel Bobbert
  */
-final class DNSIncoming
+public final class DNSIncoming
 {
-    private static Logger logger = Logger.getLogger(DNSIncoming.class.toString());
+    private static Logger logger = Logger.getLogger(DNSIncoming.class.getName());
+    
+    // This is a hack to handle a bug in the BonjourConformanceTest
+    // It is sending out target strings that don't follow the "domain name"
+    // format. 
+    public static boolean USE_DOMAIN_NAME_FORMAT_FOR_SRV_TARGET = true;
+    
     // Implementation note: This vector should be immutable.
     // If a client of DNSIncoming changes the contents of this vector,
     // we get undesired results. To fix this, we have to migrate to
@@ -43,7 +50,7 @@ final class DNSIncoming
     private int numAdditionals;
     private long receivedTime;
 
-    List questions;
+    private List questions;
     List answers;
 
     /**
@@ -52,6 +59,7 @@ final class DNSIncoming
     DNSIncoming(DatagramPacket packet) throws IOException
     {
         this.packet = packet;
+        InetAddress source = packet.getAddress();
         this.data = packet.getData();
         this.len = packet.getLength();
         this.off = packet.getOffset();
@@ -102,14 +110,42 @@ final class DNSIncoming
                             break;
                         case DNSConstants.TYPE_CNAME:
                         case DNSConstants.TYPE_PTR:
-                            rec = new DNSRecord.Pointer(domain, type, clazz, ttl, readName());
+                            String service = "";
+                            try {
+                                service = readName();                                
+                            } catch (IOException e){
+                                // there was a problem reading the service name
+                                e.printStackTrace();
+                            }
+                            rec = new DNSRecord.Pointer(domain, type, clazz, ttl, service);
                             break;
                         case DNSConstants.TYPE_TXT:
                             rec = new DNSRecord.Text(domain, type, clazz, ttl, readBytes(off, len));
                             break;
                         case DNSConstants.TYPE_SRV:
+                            int priority = readUnsignedShort();
+                            int weight = readUnsignedShort();
+                            int port = readUnsignedShort();
+                            String target = "";
+                            try {
+                                // This is a hack to handle a bug in the BonjourConformanceTest
+                                // It is sending out target strings that don't follow the "domain name"
+                                // format. 
+                                
+                                if(USE_DOMAIN_NAME_FORMAT_FOR_SRV_TARGET){
+                                    target = readName();                                    
+                                } else {
+                                    target = readNonNameString();
+                                }
+                            } catch (IOException e) {
+                                // this can happen if the type of the label 
+                                // cannot be handled.  
+                                // down below the offset gets advanced to the end
+                                // of the record 
+                                e.printStackTrace();
+                            }
                             rec = new DNSRecord.Service(domain, type, clazz, ttl,
-                                readUnsignedShort(), readUnsignedShort(), readUnsignedShort(), readName());
+                                priority, weight, port, target);
                             break;
                         case DNSConstants.TYPE_HINFO:
                             // Maybe we should do something with those
@@ -121,6 +157,7 @@ final class DNSIncoming
 
                     if (rec != null)
                     {
+                        rec.setRecordSource(source);
                         // Add a record, if we were able to create one.
                         answers.add(rec);
                     }
@@ -168,7 +205,7 @@ final class DNSIncoming
     /**
      * Check if the message is truncated.
      */
-    boolean isTruncated()
+    public boolean isTruncated()
     {
         return (flags & DNSConstants.FLAGS_TC) != 0;
     }
@@ -207,7 +244,7 @@ final class DNSIncoming
         return bytes;
     }
 
-    private void readUTF(StringBuilder buf, int off, int len) throws IOException
+    private void readUTF(StringBuffer buf, int off, int len) throws IOException
     {
         for (int end = off + len; off < end;)
         {
@@ -242,9 +279,19 @@ final class DNSIncoming
         }
     }
 
+    private String readNonNameString() throws IOException
+    {
+        StringBuffer buf = new StringBuffer();
+        int off = this.off;
+        int len = get(off++);
+        readUTF(buf, off, len);
+
+        return buf.toString();
+    }
+    
     private String readName() throws IOException
     {
-        StringBuilder buf = new StringBuilder();
+        StringBuffer buf = new StringBuffer();
         int off = this.off;
         int next = -1;
         int first = off;
@@ -273,12 +320,14 @@ final class DNSIncoming
                     off = ((len & 0x3F) << 8) | get(off++);
                     if (off >= first)
                     {
-                        throw new IOException("bad domain name: possible circular name detected");
+                        throw new IOException("bad domain name: possible circular name detected." +
+                                " name start: " + first +
+                                " bad offset: 0x" + Integer.toHexString(off));
                     }
                     first = off;
                     break;
                 default:
-                    throw new IOException("bad domain name: '" + buf + "' at " + off);
+                    throw new IOException("unsupported dns label type: '" + Integer.toHexString(len & 0xC0) +"' at " + (off-1));
             }
         }
         this.off = (next >= 0) ? next : off;
@@ -290,7 +339,7 @@ final class DNSIncoming
      */
     String print(boolean dump)
     {
-        StringBuilder buf = new StringBuilder();
+        StringBuffer buf = new StringBuffer();
         buf.append(toString() + "\n");
         for (Iterator iterator = questions.iterator(); iterator.hasNext();)
         {
@@ -367,7 +416,7 @@ final class DNSIncoming
 
     public String toString()
     {
-        StringBuilder buf = new StringBuilder();
+        StringBuffer buf = new StringBuffer();
         buf.append(isQuery() ? "dns[query," : "dns[response,");
         if (packet.getAddress() != null)
         {
@@ -429,9 +478,14 @@ final class DNSIncoming
     {
         if (this.isQuery() && this.isTruncated() && that.isQuery())
         {
-            this.questions.addAll(that.questions);
-            this.numQuestions += that.numQuestions;
+            if (that.numQuestions > 0) {
+                if (Collections.EMPTY_LIST.equals(this.questions))
+                    this.questions = Collections.synchronizedList(new ArrayList(that.numQuestions));
 
+                this.questions.addAll(that.questions);
+                this.numQuestions += that.numQuestions;
+            }
+            
             if (Collections.EMPTY_LIST.equals(answers))
             {
                 answers = Collections.synchronizedList(new ArrayList());
@@ -459,8 +513,18 @@ final class DNSIncoming
         }
     }
 
-    int elapseSinceArrival()
+    public int elapseSinceArrival()
     {
         return (int) (System.currentTimeMillis() - receivedTime);
+    }
+
+    public List getQuestions()
+    {
+        return questions;
+    }
+
+    public List getAnswers()
+    {
+        return answers;
     }
 }
