@@ -3,7 +3,9 @@
 //Original license LGPL
 
 
-package plugins.MDNSDiscovery.javax.jmdns;
+package plugins.MDNSDiscovery.javax.jmdns.impl;
+
+import java.util.logging.Logger;
 
 /**
  * DNS entry with a name, type, and class. This is the base
@@ -12,8 +14,9 @@ package plugins.MDNSDiscovery.javax.jmdns;
  * @version %I%, %G%
  * @author	Arthur van Hoff, Pierre Frisch, Rick Blair
  */
-class DNSEntry
+public class DNSEntry
 {
+    private static Logger logger = Logger.getLogger(DNSEntry.class.getName());
     String key;
     String name;
     int type;

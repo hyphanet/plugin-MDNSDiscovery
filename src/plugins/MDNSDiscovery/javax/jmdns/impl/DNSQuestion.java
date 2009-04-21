@@ -3,7 +3,9 @@
 //Original license LGPL
 
 
-package plugins.MDNSDiscovery.javax.jmdns;
+package plugins.MDNSDiscovery.javax.jmdns.impl;
+
+import java.util.logging.Logger;
 
 /**
  * A DNS question.
@@ -11,12 +13,14 @@ package plugins.MDNSDiscovery.javax.jmdns;
  * @version %I%, %G%
  * @author	Arthur van Hoff
  */
-final class DNSQuestion extends DNSEntry
+public final class DNSQuestion extends DNSEntry
 {
+    private static Logger logger = Logger.getLogger(DNSQuestion.class.getName());
+
     /**
      * Create a question.
      */
-    DNSQuestion(String name, int type, int clazz)
+    public DNSQuestion(String name, int type, int clazz)
     {
         super(name, type, clazz);
     }

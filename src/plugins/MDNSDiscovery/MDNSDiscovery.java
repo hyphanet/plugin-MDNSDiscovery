@@ -5,6 +5,7 @@
 package plugins.MDNSDiscovery;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -69,14 +70,15 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP, FredPluginReal
 		
 		try{
 			// Create the multicast listener
-			jmdns = new JmDNS();
+	        jmdns = JmDNS.create(InetAddress.getLocalHost());
+
 			final String address = "server -=" + pr.getNode().getMyName() + "=-";
 			
 			// Watch out for other nodes
 			jmdns.addServiceListener(MDNSDiscovery.freenetServiceType, new NodeMDNSListener(this));
 			
 			// Advertise Fproxy
-			fproxyInfo = new ServiceInfo("_http._tcp.local.", truncateAndSanitize("Freenet 0.7 Fproxy " + address),
+			fproxyInfo = ServiceInfo.create("_http._tcp.local.", truncateAndSanitize("Freenet 0.7 Fproxy " + address),
 					nodeConfig.get("fproxy").getInt("port"), 0, 0, "path=/");
 			if(nodeConfig.get("fproxy").getBoolean("enabled") && !nodeConfig.get("fproxy").getOption("bindTo").isDefault()){
 				jmdns.registerService(fproxyInfo);
@@ -85,7 +87,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP, FredPluginReal
 				ourDisabledServices.add(fproxyInfo);
 
 			// Advertise FCP
-			fcpInfo = new ServiceInfo("_fcp._tcp.local.", truncateAndSanitize("Freenet 0.7 FCP " + address),
+			fcpInfo = ServiceInfo.create("_fcp._tcp.local.", truncateAndSanitize("Freenet 0.7 FCP " + address),
 					nodeConfig.get("fcp").getInt("port"), 0, 0, "");
 			if(nodeConfig.get("fcp").getBoolean("enabled") && !nodeConfig.get("fcp").getOption("bindTo").isDefault()){
 				jmdns.registerService(fcpInfo);
@@ -94,7 +96,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP, FredPluginReal
 				ourDisabledServices.add(fcpInfo);
 			
 			// Advertise TMCI
-			TMCIInfo = new ServiceInfo("_telnet._tcp.local.", truncateAndSanitize("Freenet 0.7 TMCI " + address),
+			TMCIInfo = ServiceInfo.create("_telnet._tcp.local.", truncateAndSanitize("Freenet 0.7 TMCI " + address),
 					nodeConfig.get("console").getInt("port"), 0, 0, "");
 			if(nodeConfig.get("console").getBoolean("enabled") && !nodeConfig.get("console").getOption("bindTo").isDefault()){
 				jmdns.registerService(TMCIInfo);
@@ -103,7 +105,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP, FredPluginReal
 				ourDisabledServices.add(TMCIInfo);
 				
 			// Advertise the node
-			nodeInfo = new ServiceInfo(MDNSDiscovery.freenetServiceType, truncateAndSanitize("Freenet 0.7 Node " + address),
+			nodeInfo = ServiceInfo.create(MDNSDiscovery.freenetServiceType, truncateAndSanitize("Freenet 0.7 Node " + address),
 					nodeConfig.get("node").getInt("listenPort"), 0, 0, "");
 			jmdns.registerService(nodeInfo);
 			ourAdvertisedServices.add(nodeInfo);

@@ -4,9 +4,14 @@
 
 
 
-package plugins.MDNSDiscovery.javax.jmdns;
+package plugins.MDNSDiscovery.javax.jmdns.impl;
 
-import java.net.*;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,9 +21,9 @@ import java.util.logging.Logger;
  * @version %I%, %G%
  * @author	Pierre Frisch, Werner Randelshofer
  */
-class HostInfo
+public class HostInfo
 {
-    private static Logger logger = Logger.getLogger(HostInfo.class.toString());
+    private static Logger logger = Logger.getLogger(HostInfo.class.getName());
     protected String name;
     protected InetAddress address;
     protected NetworkInterface interfaze;
@@ -102,7 +107,7 @@ class HostInfo
         return (DNSConstants.TYPE_AAAA == address.type ? getDNS6AddressRecord() : getDNS4AddressRecord());
     }
 
-    DNSRecord.Address getDNS4AddressRecord()
+    public DNSRecord.Address getDNS4AddressRecord()
     {
         if ((getAddress() != null) &&
             ((getAddress() instanceof Inet4Address) ||
@@ -113,7 +118,7 @@ class HostInfo
         return null;
     }
 
-    DNSRecord.Address getDNS6AddressRecord()
+    public DNSRecord.Address getDNS6AddressRecord()
     {
         if ((getAddress() != null) && (getAddress() instanceof Inet6Address))
         {
@@ -124,7 +129,7 @@ class HostInfo
 
     public String toString()
     {
-        StringBuilder buf = new StringBuilder();
+        StringBuffer buf = new StringBuffer();
         buf.append("local host info[");
         buf.append(getName() != null ? getName() : "no name");
         buf.append(", ");
@@ -133,6 +138,35 @@ class HostInfo
         buf.append(getAddress() != null ? getAddress().getHostAddress() : "no address");
         buf.append("]");
         return buf.toString();
+    }
+
+    public void addAddressRecords(DNSOutgoing out, boolean authoritative) throws IOException
+    {
+        DNSRecord answer = getDNS4AddressRecord();
+        if (answer != null)
+        {
+            if (authoritative)
+            {
+                out.addAuthorativeAnswer(answer);
+            }
+            else
+            {
+                out.addAnswer(answer, 0);
+            }
+        }
+        
+        answer = getDNS6AddressRecord();
+        if (answer != null)
+        {
+            if (authoritative)
+            {
+                out.addAuthorativeAnswer(answer);
+            }
+            else
+            {
+                out.addAnswer(answer, 0);
+            }
+        }
     }
 
 }
