@@ -13,6 +13,7 @@ import plugins.MDNSDiscovery.javax.jmdns.JmDNS;
 import plugins.MDNSDiscovery.javax.jmdns.ServiceEvent;
 import plugins.MDNSDiscovery.javax.jmdns.ServiceInfo;
 import plugins.MDNSDiscovery.javax.jmdns.ServiceListener;
+import freenet.clients.http.PageNode;
 import freenet.config.Config;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginHTTP;
@@ -42,7 +43,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP, FredPluginReal
 	private Config nodeConfig;
 	private LinkedList ourAdvertisedServices, ourDisabledServices, foundNodes;
 	private PluginRespirator pr;
-	private static final long version = 1;
+	private static final long version = 2;
 	
 	/**
 	 * Called upon plugin unloading : we unregister advertised services
@@ -209,8 +210,9 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP, FredPluginReal
 	}
 		
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
-		HTMLNode pageNode = pr.getPageMaker().getPageNode("MDNSDiscovery plugin configuration page", false, null);
-		HTMLNode contentNode = pr.getPageMaker().getContentNode(pageNode);
+		PageNode page = pr.getPageMaker().getPageNode("MDNSDiscovery plugin configuration page", false, null);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 
 		PrintServices(contentNode, "The following services are being broadcast from this node :", (ServiceInfo[])ourAdvertisedServices.toArray(new ServiceInfo[ourAdvertisedServices.size()]));
 		
