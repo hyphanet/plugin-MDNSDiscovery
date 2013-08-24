@@ -229,7 +229,7 @@ public class MDNSDiscovery implements FredPlugin, FredPluginHTTP, FredPluginReal
 			disabledServicesInfoboxHeader.addChild("#", "Disabled services");
 			
 			disabledServicesInfoboxContent.addChild("#", "The following services won't be advertised on the local network" +
-					" because they are either disabled ot bound to the local interface :");
+					" because they are either disabled or bound to the local interface :");
 			
 			HTMLNode disabledServicesList = disabledServicesInfoboxContent.addChild("ul", "id", "disabled-service-list");
 			
